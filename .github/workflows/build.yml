@@ -15,7 +15,7 @@ jobs:
         with:
           node-version: 20
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 17
@@ -28,33 +28,13 @@ jobs:
           npx cap add android
           npx cap sync android
 
-      - name: Compiler l'APK (release non signe)
+      - name: Compiler l'APK
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew assembleRelease --no-daemon
-
-      - name: Signer l'APK
-        env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: |
-          echo "$KEYSTORE_BASE64" | base64 -d > release.jks
-          BT=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
-          IN=android/app/build/outputs/apk/release/app-release-unsigned.apk
-          $BT/zipalign -p -f 4 $IN aligned.apk
-          $BT/apksigner sign \
-            --ks release.jks \
-            --ks-pass pass:"$KEYSTORE_PASSWORD" \
-            --ks-key-alias "$KEY_ALIAS" \
-            --key-pass pass:"$KEY_PASSWORD" \
-            --out cartes-ge.apk aligned.apk
-          $BT/apksigner verify cartes-ge.apk
-          rm -f release.jks
+          ./gradlew assembleDebug --no-daemon
 
       - uses: actions/upload-artifact@v4
         with:
           name: cartes-ge-apk
-          path: cartes-ge.apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
